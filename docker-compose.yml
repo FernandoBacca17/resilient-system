@@ -76,6 +76,13 @@ services:
       - service-full
       - service-degraded
       - service-minimum
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: us-east-1
+        awslogs-group: /resilient-system/gateway
+        awslogs-stream: container-gateway
+        awslogs-create-group: "true"
     restart: unless-stopped
     networks:
       - resilient-network
