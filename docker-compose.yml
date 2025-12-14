@@ -1,0 +1,94 @@
+services:
+  # Servicio Level 1 - Full Operation
+  service-full:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+    command: node service-full.js
+    ports:
+      - "8081:8080"
+    environment:
+      - PORT=8080
+      - SERVICE_LEVEL=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - resilient-network
+
+  # Servicio Level 2 - Degraded Operation
+  service-degraded:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+    command: node service-degraded.js
+    ports:
+      - "8082:8080"
+    environment:
+      - PORT=8080
+      - SERVICE_LEVEL=2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - resilient-network
+
+  # Servicio Level 3 - Minimum Operation
+  service-minimum:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+    command: node service-minimum.js
+    ports:
+      - "8083:8080"
+    environment:
+      - PORT=8080
+      - SERVICE_LEVEL=3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - resilient-network
+
+  # API Gateway con lógica de degradación
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    command: node index.js
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - URL_L1=http://service-full:8080/service-api
+      - URL_L2=http://service-degraded:8080/service-api
+      - URL_L3=http://service-minimum:8080/service-api
+    depends_on:
+      - service-full
+      - service-degraded
+      - service-minimum
+    restart: unless-stopped
+    networks:
+      - resilient-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+networks:
+  resilient-network:
+    driver: bridge
+
+volumes:
+  logs:
+    driver: local

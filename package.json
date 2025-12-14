@@ -1,0 +1,26 @@
+{
+  "name": "resilient-system",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Sistema con degradación progresiva basada en conteo de errores",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "start:full": "node service-full.js",
+    "start:degraded": "node service-degraded.js",
+    "start:minimum": "node service-minimum.js",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "test": "k6 run test-error-count.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "prom-client": "^15.1.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
