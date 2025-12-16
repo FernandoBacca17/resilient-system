@@ -1,7 +1,6 @@
 import express from "express";
 import { ServiceLevelController } from "./levelController.js";
 import { proxyPostJson } from "./proxy.js";
-import { register, httpRequests, levelTransitions, setLevelGauge, errorCountGauge } from "./metrics.js";
 
 const app = express();
 app.use(express.json());
@@ -15,14 +14,6 @@ const LEVEL_URL = {
     2: process.env.URL_L2 ?? "http://service-degraded:8080/service-api",
     3: process.env.URL_L3 ?? "http://service-minimum:8080/service-api",
 };
-
-setLevelGauge(slc.currentLevel());
-
-// Endpoint de métricas Prometheus
-app.get("/metrics", async (_, res) => {
-    res.set("Content-Type", register.contentType);
-    res.send(await register.metrics());
-});
 
 // Endpoint de salud con información detallada
 app.get("/health", (_, res) => {
@@ -52,12 +43,6 @@ app.post("/service-api", async (req, res) => {
         // Éxito = status < 500
         success = upstream.status < 500;
 
-        // Nivel 1 y 2: passthrough de la respuesta del servicio
-        httpRequests.inc({
-            level: String(level),
-            outcome: success ? "success" : "error"
-        }, 1);
-
         const change = slc.recordOutcome({ success });
         trackTransitions(change);
 
@@ -65,7 +50,6 @@ app.post("/service-api", async (req, res) => {
 
     } catch (e) {
         // Error de conexión o timeout
-        httpRequests.inc({ level: String(level), outcome: "error" }, 1);
         const change = slc.recordOutcome({ success: false });
         trackTransitions(change);
 
@@ -81,16 +65,8 @@ app.post("/service-api", async (req, res) => {
 });
 
 function trackTransitions({ prev, next, errorCount }) {
-    // Actualizar gauge del nivel actual
-    setLevelGauge(next);
-
-    // Actualizar gauge de conteo de errores
-    errorCountGauge.set(errorCount);
-
     // Si hubo cambio de nivel, registrar transición
     if (prev !== next) {
-        levelTransitions.inc({ from: String(prev), to: String(next) }, 1);
-
         const transitionType = next > prev ? "DEGRADATION" : "RECOVERY";
 
         console.log(JSON.stringify({

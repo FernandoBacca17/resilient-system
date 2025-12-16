@@ -11,7 +11,6 @@ RUN npm i --omit=dev
 # Copiar código del gateway
 COPY gateway/index.js ./
 COPY gateway/levelController.js ./
-COPY gateway/metrics.js ./
 COPY gateway/proxy.js ./
 
 # Instalar curl para healthchecks

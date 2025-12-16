@@ -54,7 +54,7 @@ export default function () {
   const headers = { 'Content-Type': 'application/json' };
 
   // Enviar la solicitud POST
-  const url = 'http://localhost:3000/service-api';
+  const url = 'https://fpkeg6w7ja.execute-api.us-east-2.amazonaws.com/prod/service-api';
   const response = http.post(url, payload, { headers });
 
   // Mostrar en consola la iteración actual y el valor del Error
